@@ -15,7 +15,7 @@ promptMessage = sprintf(['\n\t########################## ROBÔ ESCRITOR ########
     '\n\n\tEntre com a palavra: ']);
   
 % palavra = input(promptMessage, 's');
-palavra = 'A';
+palavra = 'AA';
 %%%%%%%% CRIAR tratativa da string
 
 %% VARIÁVEIS GLOBAIS
@@ -30,7 +30,7 @@ dimensoes_quadro = [largura_quadro espessura_quadro altura_quadro];
 % Posicionamento do quadro 
 % Frame posicionado no centro geométrico do paralelepípedo
 quadro_pos_x = 0;
-quadro_pos_y = 0.85;
+quadro_pos_y = 0.83;
 quadro_pos_z = 0.5;
 loc_quadro = [quadro_pos_x; quadro_pos_y; quadro_pos_z];
 % Cria quadro
@@ -45,7 +45,7 @@ FrameQuadro = Eixo(Robo.desl(coords_frame_quadro), ...
 qtd_letras = length(palavra);
 fator_escala_letra = 1;
 altura_letra = altura_quadro*0.4*(fator_escala_letra/qtd_letras);
-largura_letra = largura_quadro*0.1*(fator_escala_letra/qtd_letras);
+largura_letra = largura_quadro*0.2*(fator_escala_letra/qtd_letras);
 
 z_start_letras = loc_quadro(3) - altura_letra/2;
 x_start_letras = get_Xstart_letras(qtd_letras, largura_letra, quadro_pos_x);
@@ -69,6 +69,7 @@ tau = 1 / max(max(K)); % Constante de tempo do maior K
 deltaT = 0.01; % Stepsize simulação
 max_sim_iter = round(5*(1/max(max(K))) / deltaT); % Tempo equivalente a 5*tau
 q = RoboEscritor.q; % Configuração atual q
+pose_inicial = RoboEscritor.cinematicadir(q, 'efetuador');
 alpha = 0.0005; % Coeficiente de amortecimento (pseudoinversa amortecida)
 CenarioEscrita.desenha();
 
@@ -85,28 +86,49 @@ for i_L=1:qtd_letras
     end
 end
 
+% Volta para a posição inicial após escrever
+simulaRobo(40, pose_inicial(1:3, 4), [0; 1; 0], false);
 
 function escreveLetraA(ksim, posicaoInicial, oriz_des)
-    global altura_letra largura_letra deltaT
+    global altura_letra largura_letra Nuvem
     t = sym('t');
     b = sym('b');
     
     % Valor sempre constante
     y_des = posicaoInicial(2);
     % Posiciona efetuador na posição inicial de escrita da letra A
-    simulaRobo(ksim + 50, posicaoInicial, oriz_des, false)
+    simulaRobo(ksim + 10, posicaoInicial, oriz_des, false)
     
-   
-%     a = altura_letra / (largura_letra / 2);
-%     
-%     lin_equation = altura_letra/2 == a*t+b;
-%     subs(lin_equation, t, largura_letra/2, b);
-%     simul_time = solve(lin_equation);
-    % Perna vertical de A --> |
-    ksim_calc = altura_letra / deltaT; 
-    pos_des_subida = [posicaoInicial(1) y_des t];
-    simulaRobo(100, pos_des_subida, oriz_des, true);
+    % Perna vertical de A (subindo) --> | 
+    pos_horizontal_sup = [posicaoInicial(1) y_des t];
+    simulaRobo(70, pos_horizontal_sup, oriz_des, true);
+    
+    % Linha horizontal superior do A
+    pos_des_z =  posicaoInicial(3) + altura_letra;
+    pos_horizontal_sup = [t y_des pos_des_z];
+    simulaRobo(20, pos_horizontal_sup, oriz_des, true);
 
+    % Perna vertical de A (descendo) --> | 
+    pos_des_x = posicaoInicial(1) + largura_letra;
+    pos_horizontal_inf = [pos_des_x y_des -t];
+    simulaRobo(20, pos_horizontal_inf, oriz_des, true);
+    
+    % Posiciona efetuador na posição do meio de A
+    pos_des_z =  posicaoInicial(3) + altura_letra/2;
+    pos_des_x = posicaoInicial(1) + largura_letra;
+    pos_horizontal_meio = posicaoInicial;
+    pos_horizontal_meio(1) = pos_des_x;
+    pos_horizontal_meio(3) = pos_des_z;
+    simulaRobo(ksim + 10, pos_horizontal_meio, oriz_des, false);
+    
+    Nuvem.px = [Nuvem.px Nuvem.px(end)];
+    Nuvem.py = [Nuvem.py y_des];
+    Nuvem.pz = [Nuvem.pz pos_des_z]; 
+    
+    % Linha horizontal do meio de A
+    pos_horizontal_meio = [-t y_des pos_des_z];
+    simulaRobo(20, pos_horizontal_meio, oriz_des, true);
+    
 end
 
 % Testa se o vetor de posição desejado é uma função temporal
@@ -120,6 +142,8 @@ function simulaRobo(ksim, p_des, oriz_des, desenha)
     % Função de raiz quadrada com sinal
     f = @(x) sign(x).*sqrt(abs(x));
     q = RoboEscritor.q;
+    satura_x = true;
+    satura_z = true;
     for k = 1:ksim
         % Calcula o tempo atual
         ti = (k-1)*deltaT;
@@ -160,15 +184,35 @@ function simulaRobo(ksim, p_des, oriz_des, desenha)
         yatual = CD(2,4);
         zatual = CD(3,4);
         if desenha
+            % Coordenadas quadro 
+            quadro_loc = Quadro.mth;
+            quadro_locx = quadro_loc(1,4);
+            quadro_locz = quadro_loc(3,4);
+            % Y da face
+            quadro_locy_face = quadro_loc(2,4) - (Quadro.lados(2)/2 + 0.01);
+            
+            % Distancia do efetuador ao centro do quadro
+            dist_cquadro_x =  abs(quadro_locx - xatual);
+            dist_cquadro_z = abs(quadro_locz - zatual);
+            tol = 1.05;
+            % Satura posição em X
+            if (dist_cquadro_x > tol*largura_letra/2) && satura_x
+                p_des(1) = xatual;
+                satura_x = false;
+            end
+            % Satura posição em Z
+            if (dist_cquadro_z > tol*altura_letra/2) && satura_z
+                p_des(3) = zatual;
+                satura_z = false;
+            end
+            
             Nuvem.px = [Nuvem.px xatual];
-            Nuvem.py = [Nuvem.py yatual];
-            Nuvem.pz = [Nuvem.pz zatual];
+            Nuvem.py = [Nuvem.py quadro_locy_face];
+            Nuvem.pz = [Nuvem.pz zatual]; 
         end
         CenarioEscrita.desenha();
         drawnow;
-        if ((abs(zatual) > altura_letra/2) || (abs(xatual) > largura_letra/2)) && desenha
-            break;
-        end
+        
     end
 end
 
