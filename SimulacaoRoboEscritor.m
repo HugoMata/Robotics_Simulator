@@ -13,9 +13,9 @@ promptMessage = sprintf(['\n\t########################## ROBÔ ESCRITOR ########
     '\n\t#     no quadro                                                    #', ...
     '\n\t####################################################################', ...
     '\n\n\tEntre com a palavra: ']);
-  
+
 % palavra = input(promptMessage, 's');
-palavra = 'AA';
+palavra = 'C';
 %%%%%%%% CRIAR tratativa da string
 
 %% VARIÁVEIS GLOBAIS
@@ -84,6 +84,9 @@ for i_L=1:qtd_letras
     if letra == 'A'    
         escreveLetraA(max_sim_iter, posicaoInicial, [0; 1; 0])
     end
+    if letra == 'C'    
+        escreveLetraC(max_sim_iter, posicaoInicial, [0; 1; 0])
+    end
 end
 
 % Volta para a posição inicial após escrever
@@ -130,6 +133,39 @@ function escreveLetraA(ksim, posicaoInicial, oriz_des)
     simulaRobo(20, pos_horizontal_meio, oriz_des, true);
     
 end
+
+function escreveLetraC(ksim, posicaoInicial, oriz_des)
+    global altura_letra largura_letra Nuvem
+    t = sym('t');
+    b = sym('b');
+    
+    % Valor sempre constante
+    y_des = posicaoInicial(2);
+    % Posiciona efetuador na posição inicial de escrita da letra C
+    pos_des_x = posicaoInicial(1) + largura_letra;
+    pos_des_z = posicaoInicial(3) + altura_letra;
+    pos_des_inicial = [pos_des_x y_des pos_des_z];
+    simulaRobo(ksim + 10, pos_des_inicial, oriz_des, false)
+    
+    % Linha horizontal superior de C
+    pos_des_z = posicaoInicial(3) + altura_letra;
+    pos_horizontal_sup = [-t y_des pos_des_z];
+    simulaRobo(70, pos_horizontal_sup, oriz_des, true);
+
+    % Perna vertical de C (descendo) --> |
+    pos_des_x = posicaoInicial(1);
+    pos_horizontal_inf = [pos_des_x y_des -t];
+    simulaRobo(20, pos_horizontal_inf, oriz_des, true);
+    
+    % Linha horizontal inferior de C
+    pos_des_z = posicaoInicial(3);
+    pos_horizontal_sup = [t y_des pos_des_z];
+    simulaRobo(20, pos_horizontal_sup, oriz_des, true);
+
+    disp("Letra C desenhada");
+    
+end
+
 
 % Testa se o vetor de posição desejado é uma função temporal
 % function bool_return = isDynamicReference(var_ref)
@@ -261,12 +297,3 @@ function startPos = get_Xstart_letras(num_letras, largura_letra, x_centro_quadro
         error('Parametrização não disponível para palavras com mais de 6 letras');
     end
 end
- 
-    
-
-    
-
-
-   
-
-  
