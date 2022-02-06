@@ -15,7 +15,7 @@ promptMessage = sprintf(['\n\t########################## ROBÔ ESCRITOR ########
     '\n\n\tEntre com a palavra: ']);
   
 % palavra = input(promptMessage, 's');
-palavra = 'AA';
+palavra = 'A';
 %%%%%%%% CRIAR tratativa da string
 
 %% VARIÁVEIS GLOBAIS
@@ -56,8 +56,6 @@ letras = split(upper(palavra), '');
 % Criação do robo Kuka KR5
 RoboEscritor = Robo.Cria_KukaKR5();
 
-% Mapeia nuvem de pontos
-Nuvem = NuvemPontos([],[],[],[0 0 1],'-');
 % Adiciona objetos ao cenário
 CenarioEscrita = Cenario(RoboEscritor);
 CenarioEscrita.adicionaobjetos(Quadro);
@@ -87,31 +85,41 @@ for i_L=1:qtd_letras
 end
 
 % Volta para a posição inicial após escrever
-simulaRobo(40, pose_inicial(1:3, 4), [0; 1; 0], false);
+simulaRobo(40, pose_inicial(1:3, 4), [0; 1; 0], false, false);
 
+% Remove frame do centro do quadro para melhor visualização da escrita
+CenarioEscrita.retiraobjeto(FrameQuadro);
+CenarioEscrita.desenha();
+
+%% FUNÇÕES AUXILIARES
 function escreveLetraA(ksim, posicaoInicial, oriz_des)
-    global altura_letra largura_letra Nuvem
+    global altura_letra largura_letra CenarioEscrita
     t = sym('t');
-    b = sym('b');
+    
+    NuvemContornoA = NuvemPontos([],[],[],[0 0 1],'-');
+    NuvemMeioA = NuvemPontos([],[],[],[0 0 1],'-');
+    
+    CenarioEscrita.adicionaobjetos(NuvemContornoA);
+    CenarioEscrita.adicionaobjetos(NuvemMeioA);
     
     % Valor sempre constante
     y_des = posicaoInicial(2);
     % Posiciona efetuador na posição inicial de escrita da letra A
-    simulaRobo(ksim + 10, posicaoInicial, oriz_des, false)
+    simulaRobo(ksim + 10, posicaoInicial, oriz_des, false, false)
     
     % Perna vertical de A (subindo) --> | 
     pos_horizontal_sup = [posicaoInicial(1) y_des t];
-    simulaRobo(70, pos_horizontal_sup, oriz_des, true);
+    simulaRobo(70, pos_horizontal_sup, oriz_des, NuvemContornoA, true);
     
     % Linha horizontal superior do A
     pos_des_z =  posicaoInicial(3) + altura_letra;
     pos_horizontal_sup = [t y_des pos_des_z];
-    simulaRobo(20, pos_horizontal_sup, oriz_des, true);
+    simulaRobo(20, pos_horizontal_sup, oriz_des, NuvemContornoA, true);
 
     % Perna vertical de A (descendo) --> | 
     pos_des_x = posicaoInicial(1) + largura_letra;
     pos_horizontal_inf = [pos_des_x y_des -t];
-    simulaRobo(20, pos_horizontal_inf, oriz_des, true);
+    simulaRobo(20, pos_horizontal_inf, oriz_des, NuvemContornoA, true);
     
     % Posiciona efetuador na posição do meio de A
     pos_des_z =  posicaoInicial(3) + altura_letra/2;
@@ -119,15 +127,15 @@ function escreveLetraA(ksim, posicaoInicial, oriz_des)
     pos_horizontal_meio = posicaoInicial;
     pos_horizontal_meio(1) = pos_des_x;
     pos_horizontal_meio(3) = pos_des_z;
-    simulaRobo(ksim + 10, pos_horizontal_meio, oriz_des, false);
+    simulaRobo(ksim + 10, pos_horizontal_meio, oriz_des, false, false);
     
-    Nuvem.px = [Nuvem.px Nuvem.px(end)];
-    Nuvem.py = [Nuvem.py y_des];
-    Nuvem.pz = [Nuvem.pz pos_des_z]; 
+    NuvemMeioA.px = [NuvemMeioA.px NuvemContornoA.px(end)];
+    NuvemMeioA.py = [NuvemMeioA.py y_des];
+    NuvemMeioA.pz = [NuvemMeioA.pz pos_des_z]; 
     
     % Linha horizontal do meio de A
     pos_horizontal_meio = [-t y_des pos_des_z];
-    simulaRobo(20, pos_horizontal_meio, oriz_des, true);
+    simulaRobo(20, pos_horizontal_meio, oriz_des, NuvemMeioA, true);
     
 end
 
@@ -136,8 +144,8 @@ end
 %     bool_return = ~isempty(symvar(var_ref));
 % end
 
-function simulaRobo(ksim, p_des, oriz_des, desenha)
-    global RoboEscritor Quadro CenarioEscrita Nuvem deltaT K alpha
+function simulaRobo(ksim, p_des, oriz_des, Nuvem, desenha)
+    global RoboEscritor Quadro CenarioEscrita deltaT K alpha
     global altura_letra largura_letra
     % Função de raiz quadrada com sinal
     f = @(x) sign(x).*sqrt(abs(x));
@@ -179,9 +187,7 @@ function simulaRobo(ksim, p_des, oriz_des, desenha)
         %Verifica se a posic~ao do efetuador esta proxima do
         %quadro para poder desenhar a figura
         CD = RoboEscritor.cinematicadir(RoboEscritor.q,'efetuador');
-        [~,Dist] = Quadro.calcdistponto(CD(1:3,4));
         xatual = CD(1,4);
-        yatual = CD(2,4);
         zatual = CD(3,4);
         if desenha
             % Coordenadas quadro 
