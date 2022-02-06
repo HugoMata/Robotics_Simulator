@@ -24,14 +24,14 @@ global altura_letra largura_letra
 
 %% PARAMETRIZAÇÃO DO QUADRO
 largura_quadro = 1.2;
-altura_quadro = 0.6;
+altura_quadro = 0.8;
 espessura_quadro = 0.1;
 dimensoes_quadro = [largura_quadro espessura_quadro altura_quadro];
 % Posicionamento do quadro 
 % Frame posicionado no centro geométrico do paralelepípedo
 quadro_pos_x = 0;
 quadro_pos_y = 0.85;
-quadro_pos_z = 0.55;
+quadro_pos_z = 0.5;
 loc_quadro = [quadro_pos_x; quadro_pos_y; quadro_pos_z];
 % Cria quadro
 Quadro = Paralelepipedo(Robo.desl(loc_quadro), ...
@@ -70,7 +70,6 @@ deltaT = 0.01; % Stepsize simulação
 max_sim_iter = round(5*(1/max(max(K))) / deltaT); % Tempo equivalente a 5*tau
 q = RoboEscritor.q; % Configuração atual q
 alpha = 0.0005; % Coeficiente de amortecimento (pseudoinversa amortecida)
-rh=[]; % Histórico de tarefas
 CenarioEscrita.desenha();
 
 %% SIMULAÇÃO
@@ -90,20 +89,23 @@ end
 function escreveLetraA(ksim, posicaoInicial, oriz_des)
     global altura_letra largura_letra deltaT
     t = sym('t');
+    b = sym('b');
     
     % Valor sempre constante
     y_des = posicaoInicial(2);
     % Posiciona efetuador na posição inicial de escrita da letra A
-    simulaRobo(ksim + 40, posicaoInicial, oriz_des, false)
+    simulaRobo(ksim + 50, posicaoInicial, oriz_des, false)
     
-    % Perna crescente esquerda de A --> /
-    % Inclinação
-    a = altura_letra / (largura_letra / 2);
-    lin_equation = altura_letra == a*t;
-    simul_time = solve(lin_equation);
-    ksim_calc = simul_time / deltaT; 
-    pos_des_subida = [t y_des a*t];
-    simulaRobo(ksim_calc, pos_des_subida, oriz_des, true);
+   
+%     a = altura_letra / (largura_letra / 2);
+%     
+%     lin_equation = altura_letra/2 == a*t+b;
+%     subs(lin_equation, t, largura_letra/2, b);
+%     simul_time = solve(lin_equation);
+    % Perna vertical de A --> |
+    ksim_calc = altura_letra / deltaT; 
+    pos_des_subida = [posicaoInicial(1) y_des t];
+    simulaRobo(100, pos_des_subida, oriz_des, true);
 
 end
 
@@ -114,6 +116,7 @@ end
 
 function simulaRobo(ksim, p_des, oriz_des, desenha)
     global RoboEscritor Quadro CenarioEscrita Nuvem deltaT K alpha
+    global altura_letra largura_letra
     % Função de raiz quadrada com sinal
     f = @(x) sign(x).*sqrt(abs(x));
     q = RoboEscritor.q;
@@ -148,18 +151,23 @@ function simulaRobo(ksim, p_des, oriz_des, desenha)
         %Coloca no rob^o
         RoboEscritor.config(q(:,k+1));
         %Desenha
-        if mod(k, 3) == 0
-            %Verifica se a posic~ao do efetuador esta proxima do
-            %quadro para poder desenhar a figura
-            CD = RoboEscritor.cinematicadir(RoboEscritor.q,'efetuador');
-            [~,Dist] = Quadro.calcdistponto(CD(1:3,4));
-            if Dist<0.01 && desenha
-                Nuvem.px = [Nuvem.px CD(1,4)];
-                Nuvem.py = [Nuvem.py CD(2,4)];
-                Nuvem.pz = [Nuvem.pz CD(3,4)];
-            end
-            CenarioEscrita.desenha();
-            drawnow;
+        %if mod(k, 3) == 0
+        %Verifica se a posic~ao do efetuador esta proxima do
+        %quadro para poder desenhar a figura
+        CD = RoboEscritor.cinematicadir(RoboEscritor.q,'efetuador');
+        [~,Dist] = Quadro.calcdistponto(CD(1:3,4));
+        xatual = CD(1,4);
+        yatual = CD(2,4);
+        zatual = CD(3,4);
+        if desenha
+            Nuvem.px = [Nuvem.px xatual];
+            Nuvem.py = [Nuvem.py yatual];
+            Nuvem.pz = [Nuvem.pz zatual];
+        end
+        CenarioEscrita.desenha();
+        drawnow;
+        if ((abs(zatual) > altura_letra/2) || (abs(xatual) > largura_letra/2)) && desenha
+            break;
         end
     end
 end
