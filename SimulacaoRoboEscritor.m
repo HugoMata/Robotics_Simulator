@@ -1,5 +1,5 @@
 %% LIMPEZA DO AMBIENTE
-%close all;
+close all;
 clear;
 clc;
 
@@ -81,11 +81,14 @@ for i_L=1:qtd_letras
                       coords_frame_quadro(2) - 0.01, ... 
                       z_start_letras];
     
-    if letra == 'A'    
+    if letra == 'A' || letra == 'a'
         escreveLetraA(max_sim_iter, posicaoInicial, [0; 1; 0])
     end
-    if letra == 'C'    
+    if letra == 'C' || letra == 'c'
         escreveLetraC(max_sim_iter, posicaoInicial, [0; 1; 0])
+    end
+    if letra == 'H' || letra == 'h'
+        escreveLetraH(max_sim_iter, posicaoInicial, [0; 1; 0])
     end
 end
 
@@ -145,7 +148,7 @@ function escreveLetraA(ksim, posicaoInicial, oriz_des)
 end
 
 function escreveLetraC(ksim, posicaoInicial, oriz_des)
-    global altura_letra largura_letra Nuvem
+    global altura_letra largura_letra Nuvem CenarioEscrita
     t = sym('t');
     b = sym('b');
     
@@ -176,6 +179,56 @@ function escreveLetraC(ksim, posicaoInicial, oriz_des)
     
 end
 
+function escreveLetraH(ksim, posicaoInicial, oriz_des)
+    global altura_letra largura_letra Nuvem CenarioEscrita
+    t = sym('t');
+    
+    NuvemEsquerdaH = NuvemPontos([],[],[],[0 0 1],'-');
+    NuvemDireitaH = NuvemPontos([],[],[],[0 0 1],'-');
+    NuvemMeioH = NuvemPontos([],[],[],[0 0 1],'-');
+    
+    CenarioEscrita.adicionaobjetos(NuvemEsquerdaH);
+    CenarioEscrita.adicionaobjetos(NuvemDireitaH);
+    CenarioEscrita.adicionaobjetos(NuvemMeioH);
+    
+    % Valor sempre constante
+    y_des = posicaoInicial(2);
+    % Posiciona efetuador na posição inicial de escrita da letra H
+    simulaRobo(ksim + 10, posicaoInicial, oriz_des, false, false)
+    
+    % Perna vertical de H (subindo) --> | 
+    pos_horizontal_sup = [posicaoInicial(1) y_des t];
+    simulaRobo(80, pos_horizontal_sup, oriz_des, NuvemEsquerdaH, true);
+
+    % Posiciona efetuador na posição do meio de H
+    pos_des_z =  posicaoInicial(3) + altura_letra/2;
+    pos_des_x = posicaoInicial(1);
+    pos_horizontal_meio = posicaoInicial;
+    pos_horizontal_meio(1) = pos_des_x;
+    pos_horizontal_meio(3) = pos_des_z;
+    simulaRobo(50, pos_horizontal_meio, oriz_des, false, false);
+    
+    % Linha horizontal do H
+    pos_des_z =  posicaoInicial(3) + altura_letra/2;
+    pos_horizontal_sup = [t y_des pos_des_z];
+    simulaRobo(30, pos_horizontal_sup, oriz_des, NuvemMeioH, true);
+
+    % Posiciona efetuador na posição em cima da segunda perna de H
+    pos_des_z =  posicaoInicial(3) + altura_letra;
+    pos_des_x = posicaoInicial(1) + largura_letra;
+    pos_horizontal_meio = posicaoInicial;
+    pos_horizontal_meio(1) = pos_des_x;
+    pos_horizontal_meio(3) = pos_des_z;
+    simulaRobo(40, pos_horizontal_meio, oriz_des, false, false);
+
+    % Perna vertical de H (descendo) --> |
+    pos_des_x = posicaoInicial(1) + largura_letra;
+    pos_horizontal_inf = [pos_des_x y_des -t];
+    simulaRobo(50, pos_horizontal_inf, oriz_des, NuvemDireitaH, true);
+
+    disp("Letra H desenhada");
+    
+end
 
 % Testa se o vetor de posição desejado é uma função temporal
 % function bool_return = isDynamicReference(var_ref)
