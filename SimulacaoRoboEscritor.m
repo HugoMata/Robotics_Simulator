@@ -234,7 +234,7 @@ function escreveLetraD(ksim, posicaoInicial, oriz_des)
     simulaRobo(ksim + 10, posicaoInicial, oriz_des, false, false)
     
     % Perna vertical de D (subindo) --> | 
-    pos_horizontal_sup = [posicaoInicial(1)+largura_letra y_des t];
+    pos_horizontal_sup = [posicaoInicial(1) y_des t];
     simulaRobo(70, pos_horizontal_sup, oriz_des, NuvemD, true);
     
     % Segmento de reta direito do D
@@ -246,7 +246,7 @@ function escreveLetraD(ksim, posicaoInicial, oriz_des)
     pos_horizontal_inf = [-t y_des posicaoInicial(3)];
     simulaRobo(60, pos_horizontal_inf, oriz_des, NuvemD, true);
     
-     disp("Letra D desenhada.");
+     disp("Letra D desenhada");
 end
 
 function escreveLetraE(ksim, posicaoInicial, oriz_des)
