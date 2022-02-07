@@ -273,10 +273,17 @@ function escreveLetraG(ksim, posicaoInicial, oriz_des)
     % Meio de G (esquerda para direita) --> --
     pos_des = [t y_des z_des];
     simulaRobo(15, pos_des, oriz_des, NuvemContornoG, true);
+
+    % Lateral direita de G (meio para baixo) --> |
+    x_des_lat_dir = posicaoInicial(1) + largura_letra;
+    pos_des = [x_des_lat_dir y_des -t];
+    simulaRobo(15, pos_des, oriz_des, NuvemContornoG, true);
+
+    % Base do G (direita para esquerda) --> --
+    pos_des = [-t y_des posicaoInicial(3)];
+    simulaRobo(30, pos_des, oriz_des, NuvemContornoG, true);
+
 end
-
-
-
 
 
 function escreveLetraH(ksim, posicaoInicial, oriz_des)
