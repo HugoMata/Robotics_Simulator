@@ -14,8 +14,12 @@ promptMessage = sprintf(['\n\t########################## ROBÔ ESCRITOR ########
     '\n\t####################################################################', ...
     '\n\n\tEntre com a palavra: ']);
 
-% palavra = input(promptMessage, 's');
-palavra = 'G'; 
+palavra = input(promptMessage, 's');
+%palavra = 'G'; 
+if strlength(palavra) > 6
+    disp('A palavra nao pode conter mais que 6 letras')
+    exit();
+end
 %%%%%%%% CRIAR tratativa da string
 
 %% VARIÁVEIS GLOBAIS
@@ -95,6 +99,9 @@ for i_L=1:qtd_letras
         escreveLetraG(max_sim_iter, posicaoInicial, [0; 1; 0]);
     elseif letra == 'H'
         escreveLetraH(max_sim_iter, posicaoInicial, [0; 1; 0]);
+    else
+        disp('A palavra não pode conter letras diferentes de A, B, C, D, E, F, G ou H.')
+        exit();
     end
 end
 
@@ -284,7 +291,6 @@ function escreveLetraG(ksim, posicaoInicial, oriz_des)
     simulaRobo(30, pos_des, oriz_des, NuvemContornoG, true);
 
 end
-
 
 function escreveLetraH(ksim, posicaoInicial, oriz_des)
     global altura_letra largura_letra CenarioEscrita
