@@ -16,7 +16,7 @@ promptMessage = sprintf(['\n\t########################## ROBÔ ESCRITOR ########
 
 % palavra = input(promptMessage, 's');
 
-palavra = 'H';
+palavra = 'B';
 
 %%%%%%%% CRIAR tratativa da string
 
@@ -84,6 +84,9 @@ for i_L=1:qtd_letras
     if letra == 'A' || letra == 'a'
         escreveLetraA(max_sim_iter, posicaoInicial, [0; 1; 0])
     end
+    if letra == 'B' || letra == 'b'
+        escreveLetraH(max_sim_iter, posicaoInicial, [0; 1; 0])
+    end
     if letra == 'C' || letra == 'c'
         escreveLetraC(max_sim_iter, posicaoInicial, [0; 1; 0])
     end
@@ -146,6 +149,32 @@ function escreveLetraA(ksim, posicaoInicial, oriz_des)
     simulaRobo(20, pos_horizontal_meio, oriz_des, NuvemMeioA, true);
     
 end
+
+function escreveLetraB(ksim, posicaoInicial, oriz_des)
+    global altura_letra largura_letra CenarioEscrita
+    t = sym('t');
+    NuvemContornoG = NuvemPontos([],[],[],[0 0 1],'-');
+    CenarioEscrita.adicionaobjetos(NuvemContornoG);
+    % Valor sempre constante
+    y_des = posicaoInicial(2);
+    x_des = posicaoInicial(1);
+    z_des = posicaoInicial(3) + altura_letra/2;
+    pos_des_inicio = [x_des y_des z_des];
+    % Posiciona efetuador na posição inicial de escrita da letra G
+    simulaRobo(ksim, pos_des_inicio, oriz_des, false, false);
+    % Meio de G (esquerda para direita) --> --
+    pos_des = [t y_des z_des];
+    simulaRobo(15, pos_des, oriz_des, NuvemContornoG, true);
+    % Lateral direita de G (meio para baixo) --> |
+    x_des_lat_dir = posicaoInicial(1) + largura_letra;
+    pos_des = [x_des_lat_dir y_des -t];
+    simulaRobo(15, pos_des, oriz_des, NuvemContornoG, true);
+    % Base do G (direita para esquerda) --> --
+    pos_des = [-t y_des posicaoInicial(3)];
+    simulaRobo(20, pos_des, oriz_des, NuvemContornoG, true);
+    % Lateral esquerda de G (de baixo para cima) --> |
+    pos_des = [posicaoInicial(1) y_des t];
+    simulaRobo(100, pos_des, oriz_des, NuvemContornoG, true);
 
 function escreveLetraC(ksim, posicaoInicial, oriz_des)
     global altura_letra largura_letra Nuvem CenarioEscrita
@@ -301,6 +330,16 @@ function simulaRobo(ksim, p_des, oriz_des, Nuvem, desenha)
             if (dist_cquadro_z > tol*altura_letra/2) && satura_z
                 p_des(3) = zatual;
                 satura_z = false;
+            end
+            if (dist_cquadro_x < tol*altura_letra/2) && satura_x && traco_medio_B
+                p_des(1) = xatual;
+                satura_x = false;
+                traco_medio_B = false;
+            end
+            if (dist_cquadro_x < 0.01) && satura_x && traco_medio_B_2
+                p_des(1) = xatual;
+                satura_x = false;
+                traco_medio_B = false;
             end
             
             Nuvem.px = [Nuvem.px xatual];
