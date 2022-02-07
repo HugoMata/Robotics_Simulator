@@ -15,7 +15,7 @@ promptMessage = sprintf(['\n\t########################## ROBÔ ESCRITOR ########
     '\n\n\tEntre com a palavra: ']);
   
 % palavra = input(promptMessage, 's');
-palavra = 'A';
+palavra = 'G';
 %%%%%%%% CRIAR tratativa da string
 
 %% VARIÁVEIS GLOBAIS
@@ -80,7 +80,9 @@ for i_L=1:qtd_letras
                       z_start_letras];
     
     if letra == 'A'    
-        escreveLetraA(max_sim_iter, posicaoInicial, [0; 1; 0])
+        escreveLetraA(max_sim_iter, posicaoInicial, [0; 1; 0]);
+    elseif letra == 'G'
+        escreveLetraG(max_sim_iter, posicaoInicial, [0; 1; 0]);
     end
 end
 
@@ -128,21 +130,57 @@ function escreveLetraA(ksim, posicaoInicial, oriz_des)
     pos_horizontal_meio(1) = pos_des_x;
     pos_horizontal_meio(3) = pos_des_z;
     simulaRobo(ksim + 10, pos_horizontal_meio, oriz_des, false, false);
-    
-    NuvemMeioA.px = [NuvemMeioA.px NuvemContornoA.px(end)];
-    NuvemMeioA.py = [NuvemMeioA.py y_des];
-    NuvemMeioA.pz = [NuvemMeioA.pz pos_des_z]; 
-    
+   
     % Linha horizontal do meio de A
     pos_horizontal_meio = [-t y_des pos_des_z];
     simulaRobo(20, pos_horizontal_meio, oriz_des, NuvemMeioA, true);
-    
 end
 
-% Testa se o vetor de posição desejado é uma função temporal
-% function bool_return = isDynamicReference(var_ref)
-%     bool_return = ~isempty(symvar(var_ref));
-% end
+function escreveLetraG(ksim, posicaoInicial, oriz_des)
+    global altura_letra largura_letra CenarioEscrita
+    t = sym('t');
+
+    NuvemContornoG = NuvemPontos([],[],[],[0 0 1],'-');
+    NuvemAlturaG = NuvemPontos([],[],[],[0 0 1],'-');
+
+    CenarioEscrita.adicionaobjetos(NuvemContornoG);
+    CenarioEscrita.adicionaobjetos(NuvemAlturaG);
+
+    % Valor sempre constante
+    y_des = posicaoInicial(2);
+    x_des = posicaoInicial(1) + 0.6*largura_letra;
+    z_des = posicaoInicial(3) + altura_letra/2;
+    pos_des_inicio = [x_des y_des z_des];
+
+    % Posiciona efetuador na posição inicial de escrita da letra G
+    simulaRobo(ksim + 10, posicaoInicial, oriz_des, false, false)
+
+    % Perna vertical de G (subindo) --> |
+    pos_horizontal_sup = [posicaoInicial(1) y_des t];
+    simulaRobo(70, pos_horizontal_sup, oriz_des, NuvemAlturaG, true);
+
+    % Linha horizontal superior do G
+    pos_des_z = posicaoInicial(3) + altura_letra;
+    pos_horizontal_sup = [t y_des pos_des_z];
+    simulaRobo(20, pos_horizontal_sup, oriz_des, NuvemAlturaG, true);
+
+    % Posiciona efetuador na posição inicial de escrita da letra G
+    simulaRobo(ksim, pos_des_inicio, oriz_des, false, false);
+
+    % Meio de G (esquerda para direita) --> --
+    pos_des = [t y_des z_des];
+    simulaRobo(15, pos_des, oriz_des, NuvemContornoG, true);
+
+    % Lateral direita de G (meio para baixo) --> |
+    x_des_lat_dir = posicaoInicial(1) + largura_letra;
+    pos_des = [x_des_lat_dir y_des -t];
+    simulaRobo(15, pos_des, oriz_des, NuvemContornoG, true);
+
+    % Base do G (direita para esquerda) --> --
+    pos_des = [-t y_des posicaoInicial(3)];
+    simulaRobo(30, pos_des, oriz_des, NuvemContornoG, true);
+
+end
 
 function simulaRobo(ksim, p_des, oriz_des, Nuvem, desenha)
     global RoboEscritor Quadro CenarioEscrita deltaT K alpha
@@ -211,7 +249,6 @@ function simulaRobo(ksim, p_des, oriz_des, Nuvem, desenha)
                 p_des(3) = zatual;
                 satura_z = false;
             end
-            
             Nuvem.px = [Nuvem.px xatual];
             Nuvem.py = [Nuvem.py quadro_locy_face];
             Nuvem.pz = [Nuvem.pz zatual]; 
