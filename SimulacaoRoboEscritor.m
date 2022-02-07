@@ -82,19 +82,19 @@ for i_L=1:qtd_letras
     if letra == 'A'    
         escreveLetraA(max_sim_iter, posicaoInicial, [0; 1; 0]);
     elseif letra == 'B'
-        escreveLetraH(max_sim_iter, posicaoInicial, [0; 1; 0])
+        escreveLetraB(max_sim_iter, posicaoInicial, [0; 1; 0]);
     elseif letra == 'C'
-        escreveLetraC(max_sim_iter, posicaoInicial, [0; 1; 0])
+        escreveLetraC(max_sim_iter, posicaoInicial, [0; 1; 0]);
+    elseif letra == 'D'    
+        escreveLetraD(max_sim_iter, posicaoInicial, [0; 1; 0]);
+    elseif letra == 'E'    
+        escreveLetraE(max_sim_iter, posicaoInicial, [0; 1; 0]);
+    elseif letra == 'F'
+        escreveLetraF(max_sim_iter, posicaoInicial, [0; 1; 0]);
     elseif letra == 'G'
         escreveLetraG(max_sim_iter, posicaoInicial, [0; 1; 0]);
     elseif letra == 'H'
-        escreveLetraH(max_sim_iter, posicaoInicial, [0; 1; 0])
-    end
-        if letra == 'E'    
-        escreveLetraE(max_sim_iter, posicaoInicial, [0; 1; 0])
-    end
-    if letra == 'F'
-        escreveLetraF(max_sim_iter, posicaoInicial, [0; 1; 0])
+        escreveLetraH(max_sim_iter, posicaoInicial, [0; 1; 0]);
     end
 end
 
@@ -146,6 +146,97 @@ function escreveLetraA(ksim, posicaoInicial, oriz_des)
     % Linha horizontal do meio de A
     pos_horizontal_meio = [-t y_des pos_des_z];
     simulaRobo(20, pos_horizontal_meio, oriz_des, NuvemMeioA, true);
+     
+    disp("Letra A desenhada");
+end
+
+function escreveLetraB(ksim, posicaoInicial, oriz_des)
+    global altura_letra largura_letra CenarioEscrita
+    t = sym('t');
+    NuvemContornoG = NuvemPontos([],[],[],[0 0 1],'-');
+    CenarioEscrita.adicionaobjetos(NuvemContornoG);
+    % Valor sempre constante
+    y_des = posicaoInicial(2);
+    x_des = posicaoInicial(1);
+    z_des = posicaoInicial(3) + altura_letra/2;
+    pos_des_inicio = [x_des y_des z_des];
+    % Posiciona efetuador na posição inicial de escrita da letra G
+    simulaRobo(ksim, pos_des_inicio, oriz_des, false, false);
+    % Meio de G (esquerda para direita) --> --
+    pos_des = [t y_des z_des];
+    simulaRobo(15, pos_des, oriz_des, NuvemContornoG, true);
+    % Lateral direita de G (meio para baixo) --> |
+    x_des_lat_dir = posicaoInicial(1) + largura_letra;
+    pos_des = [x_des_lat_dir y_des -t];
+    simulaRobo(15, pos_des, oriz_des, NuvemContornoG, true);
+
+    % Base do G (direita para esquerda) --> --
+    pos_des = [-t y_des posicaoInicial(3)];
+    simulaRobo(20, pos_des, oriz_des, NuvemContornoG, true);
+    
+    % Lateral esquerda de G (de baixo para cima) --> |
+    pos_des = [posicaoInicial(1) y_des t];
+    simulaRobo(100, pos_des, oriz_des, NuvemContornoG, true);
+    
+     disp("Letra B desenhada");
+end
+
+function escreveLetraC(ksim, posicaoInicial, oriz_des)
+    global altura_letra largura_letra
+    t = sym('t');
+    
+    % Valor sempre constante
+    y_des = posicaoInicial(2);
+    % Posiciona efetuador na posição inicial de escrita da letra C
+    pos_des_x = posicaoInicial(1) + largura_letra;
+    pos_des_z = posicaoInicial(3) + altura_letra;
+    pos_des_inicial = [pos_des_x y_des pos_des_z];
+    simulaRobo(ksim + 10, pos_des_inicial, oriz_des, false)
+    
+    % Linha horizontal superior de C
+    pos_des_z = posicaoInicial(3) + altura_letra;
+    pos_horizontal_sup = [-t y_des pos_des_z];
+    simulaRobo(70, pos_horizontal_sup, oriz_des, true);
+
+    % Perna vertical de C (descendo) --> |
+    pos_des_x = posicaoInicial(1);
+    pos_horizontal_inf = [pos_des_x y_des -t];
+    simulaRobo(20, pos_horizontal_inf, oriz_des, true);
+    
+    % Linha horizontal inferior de C
+    pos_des_z = posicaoInicial(3);
+    pos_horizontal_sup = [t y_des pos_des_z];
+    simulaRobo(20, pos_horizontal_sup, oriz_des, true);
+
+    disp("Letra C desenhada");
+end
+
+function escreveLetraD(ksim, posicaoInicial, oriz_des)
+    global CenarioEscrita largura_letra
+    t = sym('t');
+
+    NuvemD = NuvemPontos([],[],[],[0 0 1],'-');
+    CenarioEscrita.adicionaobjetos(NuvemD);
+    
+    % Valor sempre constante
+    y_des = posicaoInicial(2);
+    % Posiciona efetuador na posição inicial de escrita da letra D
+    simulaRobo(ksim + 10, posicaoInicial, oriz_des, false, false)
+    
+    % Perna vertical de D (subindo) --> | 
+    pos_horizontal_sup = [posicaoInicial(1)+largura_letra y_des t];
+    simulaRobo(70, pos_horizontal_sup, oriz_des, NuvemD, true);
+    
+    % Segmento de reta direito do D
+    pos_des_z =  posicaoInicial(3)*2/3;
+    pos_horizontal_sup = [t y_des pos_des_z];
+    simulaRobo(70, pos_horizontal_sup, oriz_des, NuvemD, true);
+
+    % Perna horizontal do D (direita para esquerda) --> ____ 
+    pos_horizontal_inf = [-t y_des posicaoInicial(3)];
+    simulaRobo(60, pos_horizontal_inf, oriz_des, NuvemD, true);
+    
+     disp("Letra D desenhada");
 end
 
 function escreveLetraG(ksim, posicaoInicial, oriz_des)
@@ -184,68 +275,12 @@ function escreveLetraG(ksim, posicaoInicial, oriz_des)
     simulaRobo(15, pos_des, oriz_des, NuvemContornoG, true);
 end
 
-function escreveLetraB(ksim, posicaoInicial, oriz_des)
-    global altura_letra largura_letra CenarioEscrita
-    t = sym('t');
-    NuvemContornoG = NuvemPontos([],[],[],[0 0 1],'-');
-    CenarioEscrita.adicionaobjetos(NuvemContornoG);
-    % Valor sempre constante
-    y_des = posicaoInicial(2);
-    x_des = posicaoInicial(1);
-    z_des = posicaoInicial(3) + altura_letra/2;
-    pos_des_inicio = [x_des y_des z_des];
-    % Posiciona efetuador na posição inicial de escrita da letra G
-    simulaRobo(ksim, pos_des_inicio, oriz_des, false, false);
-    % Meio de G (esquerda para direita) --> --
-    pos_des = [t y_des z_des];
-    simulaRobo(15, pos_des, oriz_des, NuvemContornoG, true);
-    % Lateral direita de G (meio para baixo) --> |
-    x_des_lat_dir = posicaoInicial(1) + largura_letra;
-    pos_des = [x_des_lat_dir y_des -t];
-    simulaRobo(15, pos_des, oriz_des, NuvemContornoG, true);
 
-    % Base do G (direita para esquerda) --> --
-    pos_des = [-t y_des posicaoInicial(3)];
-    simulaRobo(20, pos_des, oriz_des, NuvemContornoG, true);
-    
-    % Lateral esquerda de G (de baixo para cima) --> |
-    pos_des = [posicaoInicial(1) y_des t];
-    simulaRobo(100, pos_des, oriz_des, NuvemContornoG, true);
-end
 
-function escreveLetraC(ksim, posicaoInicial, oriz_des)
-    global altura_letra largura_letra Nuvem CenarioEscrita
-    t = sym('t');
-    b = sym('b');
-    
-    % Valor sempre constante
-    y_des = posicaoInicial(2);
-    % Posiciona efetuador na posição inicial de escrita da letra C
-    pos_des_x = posicaoInicial(1) + largura_letra;
-    pos_des_z = posicaoInicial(3) + altura_letra;
-    pos_des_inicial = [pos_des_x y_des pos_des_z];
-    simulaRobo(ksim + 10, pos_des_inicial, oriz_des, false)
-    
-    % Linha horizontal superior de C
-    pos_des_z = posicaoInicial(3) + altura_letra;
-    pos_horizontal_sup = [-t y_des pos_des_z];
-    simulaRobo(70, pos_horizontal_sup, oriz_des, true);
 
-    % Perna vertical de C (descendo) --> |
-    pos_des_x = posicaoInicial(1);
-    pos_horizontal_inf = [pos_des_x y_des -t];
-    simulaRobo(20, pos_horizontal_inf, oriz_des, true);
-    
-    % Linha horizontal inferior de C
-    pos_des_z = posicaoInicial(3);
-    pos_horizontal_sup = [t y_des pos_des_z];
-    simulaRobo(20, pos_horizontal_sup, oriz_des, true);
-
-    disp("Letra C desenhada");
-end
 
 function escreveLetraH(ksim, posicaoInicial, oriz_des)
-    global altura_letra largura_letra Nuvem CenarioEscrita
+    global altura_letra largura_letra CenarioEscrita
     t = sym('t');
     
     NuvemEsquerdaH = NuvemPontos([],[],[],[0 0 1],'-');
