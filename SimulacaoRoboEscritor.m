@@ -15,7 +15,7 @@ promptMessage = sprintf(['\n\t########################## ROBÔ ESCRITOR ########
     '\n\n\tEntre com a palavra: ']);
 
 % palavra = input(promptMessage, 's');
-palavra = 'G';
+palavra = 'G'; 
 %%%%%%%% CRIAR tratativa da string
 
 %% VARIÁVEIS GLOBAIS
