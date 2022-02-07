@@ -176,6 +176,7 @@ function escreveLetraG(ksim, posicaoInicial, oriz_des)
     % Meio de G (esquerda para direita) --> --
     pos_des = [t y_des z_des];
     simulaRobo(15, pos_des, oriz_des, NuvemContornoG, true);
+end
 
 function escreveLetraB(ksim, posicaoInicial, oriz_des)
     global altura_letra largura_letra CenarioEscrita
@@ -204,6 +205,7 @@ function escreveLetraB(ksim, posicaoInicial, oriz_des)
     % Lateral esquerda de G (de baixo para cima) --> |
     pos_des = [posicaoInicial(1) y_des t];
     simulaRobo(100, pos_des, oriz_des, NuvemContornoG, true);
+end
 
 function escreveLetraC(ksim, posicaoInicial, oriz_des)
     global altura_letra largura_letra Nuvem CenarioEscrita
@@ -234,7 +236,6 @@ function escreveLetraC(ksim, posicaoInicial, oriz_des)
     simulaRobo(20, pos_horizontal_sup, oriz_des, true);
 
     disp("Letra C desenhada");
-    
 end
 
 function escreveLetraH(ksim, posicaoInicial, oriz_des)
@@ -284,8 +285,7 @@ function escreveLetraH(ksim, posicaoInicial, oriz_des)
     pos_horizontal_inf = [pos_des_x y_des -t];
     simulaRobo(50, pos_horizontal_inf, oriz_des, NuvemDireitaH, true);
 
-    disp("Letra H desenhada");
-    
+    disp("Letra H desenhada");   
 end
 
 % Testa se o vetor de posição desejado é uma função temporal
