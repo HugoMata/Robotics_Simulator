@@ -8,7 +8,7 @@ promptMessage = sprintf(['\n\t########################## ROBÔ ESCRITOR ########
     '\n\t#   Instruções:                                                    #', ...
     '\n\t#   > Escreva uma palavra de tamanho 1 a 6 utilizando              #', ...
     '\n\t#     somente letras dentro do seguinte conjunto:                  #', ...
-    '\n\t#	   Letras = {A, B, C, D, E, F, G, H}                       #', ...
+    '\n\t#	   Letras = {A, B, C, D, E, F, G, H}                            #', ...
     '\n\t#   > Após a validação da palavra, o robô irá escrevê-la           #', ...
     '\n\t#     no quadro                                                    #', ...
     '\n\t####################################################################', ...
@@ -18,7 +18,7 @@ palavra = input(promptMessage, 's');
 %palavra = 'G'; 
 if strlength(palavra) > 6
     disp('A palavra nao pode conter mais que 6 letras')
-    exit();
+    return;
 end
 %%%%%%%% CRIAR tratativa da string
 
@@ -66,15 +66,14 @@ CenarioEscrita.adicionaobjetos(Quadro);
 CenarioEscrita.adicionaobjetos(Nuvem);
 CenarioEscrita.adicionaobjetos(FrameQuadro);
 % Parâmetros gerais utilizados durante a simulação
-K = diag([2 2 2 10]); % Ganho K
+K = diag([2 2 2 3]); % Ganho K
 tau = 1 / max(max(K)); % Constante de tempo do maior K
 deltaT = 0.01; % Stepsize simulação
 max_sim_iter = round(5*(1/max(max(K))) / deltaT); % Tempo equivalente a 5*tau
 q = RoboEscritor.q; % Configuração atual q
 pose_inicial = RoboEscritor.cinematicadir(q, 'efetuador');
-alpha = 0.0005; % Coeficiente de amortecimento (pseudoinversa amortecida)
+alpha = 0.005; % Coeficiente de amortecimento (pseudoinversa amortecida)
 CenarioEscrita.desenha();
-
 %% SIMULAÇÃO
 
 for i_L=1:qtd_letras
@@ -101,7 +100,7 @@ for i_L=1:qtd_letras
         escreveLetraH(max_sim_iter, posicaoInicial, [0; 1; 0]);
     else
         disp('A palavra não pode conter letras diferentes de A, B, C, D, E, F, G ou H.')
-        exit();
+        return;
     end
 end
 
@@ -231,30 +230,29 @@ function escreveLetraC(ksim, posicaoInicial, oriz_des)
 end
 
 function escreveLetraD(ksim, posicaoInicial, oriz_des)
-    global CenarioEscrita largura_letra
+    global CenarioEscrita altura_letra
     t = sym('t');
 
     NuvemD = NuvemPontos([],[],[],[0 0 1],'-');
     CenarioEscrita.adicionaobjetos(NuvemD);
-    
+    CenarioEscrita.desenha();
+    pause(3);
     % Valor sempre constante
     y_des = posicaoInicial(2);
     % Posiciona efetuador na posição inicial de escrita da letra D
-    simulaRobo(ksim + 10, posicaoInicial, oriz_des, false, false)
+    simulaRobo(65, posicaoInicial, oriz_des, false, false)
     
     % Perna vertical de D (subindo) --> | 
     pos_horizontal_sup = [posicaoInicial(1) y_des t];
     simulaRobo(70, pos_horizontal_sup, oriz_des, NuvemD, true);
     
     % Segmento de reta direito do D
-    pos_des_z =  posicaoInicial(3)*2/3;
-    pos_horizontal_sup = [t y_des pos_des_z];
-    simulaRobo(70, pos_horizontal_sup, oriz_des, NuvemD, true);
+    raio = altura_letra/2;
+    pos_des_x = posicaoInicial(1) + raio*cos(-t + pi/2);
+    pos_des_z =  (posicaoInicial(3) + raio) + raio*sin(-t + pi/2);
+    pos_horizontal_sup = [pos_des_x y_des pos_des_z];
+    [r_hist, u_hist] = simulaRobo(350, pos_horizontal_sup, oriz_des, NuvemD, true);
 
-    % Perna horizontal do D (direita para esquerda) --> ____ 
-    pos_horizontal_inf = [-t y_des posicaoInicial(3)];
-    simulaRobo(60, pos_horizontal_inf, oriz_des, NuvemD, true);
-    
      disp("Letra D desenhada");
 end
 
@@ -467,12 +465,14 @@ end
 %     bool_return = ~isempty(symvar(var_ref));
 % end
 
-function simulaRobo(ksim, p_des, oriz_des, Nuvem, desenha)
+function [r_hist, u_hist] = simulaRobo(ksim, p_des, oriz_des, Nuvem, desenha)
     global RoboEscritor Quadro CenarioEscrita deltaT K alpha
     global altura_letra largura_letra
     % Função de raiz quadrada com sinal
     f = @(x) sign(x).*sqrt(abs(x));
     q = RoboEscritor.q;
+    r_hist = [];
+    u_hist = [];
     satura_x = true;
     satura_z = true;
     for k = 1:ksim
@@ -498,6 +498,7 @@ function simulaRobo(ksim, p_des, oriz_des, Nuvem, desenha)
         % Realiza substituição do instante t no vetor de posição desejada
         % caso ele possua alguma função dependente do tempo
         r = subs(sym(r), sym('t'), ti);
+        prpt = subs(sym(prpt), sym('t'), ti);
         
         %Calculando a velocidade que deve ser integrada
         qdot = Robo.pinvam(Jr, alpha)*(-K*f(r)-prpt);
@@ -523,15 +524,18 @@ function simulaRobo(ksim, p_des, oriz_des, Nuvem, desenha)
             % Distancia do efetuador ao centro do quadro
             dist_cquadro_x =  abs(quadro_locx - xatual);
             dist_cquadro_z = abs(quadro_locz - zatual);
+            
             tol = 1.05;
             % Satura posição em X
             if (dist_cquadro_x > tol*largura_letra/2) && satura_x
-                p_des(1) = xatual;
+                deltaX = dist_cquadro_x - largura_letra/2;
+                p_des(1) = xatual - deltaX;
                 satura_x = false;
             end
             % Satura posição em Z
             if (dist_cquadro_z > tol*altura_letra/2) && satura_z
-                p_des(3) = zatual;
+                deltaZ = dist_cquadro_z - altura_letra/2;
+                p_des(3) = zatual - deltaZ;
                 satura_z = false;
             end
             
@@ -541,7 +545,8 @@ function simulaRobo(ksim, p_des, oriz_des, Nuvem, desenha)
         end
         CenarioEscrita.desenha();
         drawnow;
-        
+        r_hist(:,k) = r;
+        u_hist(:,k) = qdot;
     end
 end
 
@@ -589,4 +594,15 @@ function startPos = get_Xstart_letras(num_letras, largura_letra, x_centro_quadro
     else
         error('Parametrização não disponível para palavras com mais de 6 letras');
     end
+end
+
+
+function plotVetorTarefaHist(r_hist)
+    plot(r_hist(1,:), 'LineWidth', 1);
+    hold on;
+    plot(r_hist(2,:), 'LineWidth', 1);
+    plot(r_hist(3,:), 'LineWidth', 1);
+    plot(r_hist(4,:), 'LineWidth', 1);
+    legend('Posição x', 'Posição y', 'Posição z', 'Orientação y', ...,
+           'Location', 'Northeast');
 end
