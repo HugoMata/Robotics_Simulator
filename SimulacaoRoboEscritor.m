@@ -89,7 +89,7 @@ for i_L=1:qtd_letras
     elseif letra == 'B'
         escreveLetraB(N, posicaoInicial, [0; 1; 0]);
     elseif letra == 'C'
-        escreveLetraC(N, posicaoInicial, [0; 1; 0]);
+        escreveLetraC(3*N, posicaoInicial, [0; 1; 0]);
     elseif letra == 'D'    
         escreveLetraD(N, posicaoInicial, [0; 1; 0]);
     elseif letra == 'E'    
@@ -122,7 +122,6 @@ reta = @(n) pinit + (pfim - pinit)*(n/N);
 %%
 function escreveLetraA(N, posicaoInicial, oriz_des)
     global altura_letra largura_letra CenarioEscrita 
-    t = sym('t');
     
     NuvemContornoA = NuvemPontos([],[],[],[0 0 1],'-');
     NuvemMeioA = NuvemPontos([],[],[],[0 0 1],'-');
@@ -151,13 +150,13 @@ function escreveLetraA(N, posicaoInicial, oriz_des)
     z_end = posicaoInicial(3);
     pend = [x_end y_des z_end];
     traj_reta = criaTrajReta(pstart, pend, N);
-    [r_hist, u_hist] = simulaRobo(N, traj_reta, oriz_des, ...
-                                  NuvemContornoA, true, false);
+    simulaRobo(N, traj_reta, oriz_des, NuvemContornoA, true, false);
     % Retira pincel do quadro e o posiciona na posição de inicio
     % do traço horizontal de A
     retiraPincelQuadro(pend, 0.05);
-    % Posição relativa do traço (50% da altura da letra)
+    % Posição relativa do traço (50% da altura da letra) 
     scale_traco = 0.5;
+    % Semelhança de triângulos
     deltaX_traco = scale_traco * (largura_letra/2);
     deltaZ_traco = scale_traco * altura_letra;
     x_des = posicaoInicial(1) + deltaX_traco;
@@ -171,74 +170,95 @@ function escreveLetraA(N, posicaoInicial, oriz_des)
     z_end = z_des;
     pend = [x_end y_des z_end];
     traj_reta = criaTrajReta(pstart, pend, N);
-    [r_hist, u_hist] = simulaRobo(N, traj_reta, oriz_des, ...
-                                  NuvemMeioA, true, false);
+    simulaRobo(N, traj_reta, oriz_des, NuvemMeioA, true, false);
     disp("Letra A desenhada.");
 end
 
-function escreveLetraB(ksim, posicaoInicial, oriz_des)
-    global altura_letra largura_letra CenarioEscrita
-    t = sym('t');
+function escreveLetraB(N, posicaoInicial, oriz_des)
+    global altura_letra CenarioEscrita
+    
     NuvemContornoB = NuvemPontos([],[],[],[0 0 1],'-');
-    NuvemLateralB = NuvemPontos([],[],[],[0 0 1],'-');
     CenarioEscrita.adicionaobjetos(NuvemContornoB);
    
     % Valor sempre constante
     y_des = posicaoInicial(2);
     
     % Posiciona efetuador na posição inicial de escrita da letra B
-    simulaRobo(ksim, posicaoInicial, oriz_des, false, false);
+    simulaRobo(500, posicaoInicial, oriz_des, false, false, true);
     
-    % Lateral esquerda de B (baixo para cima) --> |
-    pos_des = [posicaoInicial(1) y_des t];
-    simulaRobo(100, pos_des, oriz_des, NuvemContornoB, true);
+    % Reta vertical de B
+    pstart = posicaoInicial;
+    pend = pstart;
+    pend(3) = pend(3) + altura_letra;
+    traj_reta = criaTrajReta(pstart, pend, N);
+    simulaRobo(N, traj_reta, oriz_des, NuvemContornoB, true, false);
     
-    % Lateral direita de B (meio para baixo) --> |
-%     x_des_lat_dir = posicaoInicial(1) + largura_letra;
-%     pos_des = [x_des_lat_dir y_des -t];
-%     simulaRobo(15, pos_des, oriz_des, NuvemContornoB, true);
-% 
-%     % Base do B (direita para esquerda) --> --
-%     pos_des = [-t y_des posicaoInicial(3)];
-%     simulaRobo(20, pos_des, oriz_des, NuvemContornoB, true);
-%     
-%     % Posiciona efetuador na parte de cima da letra B
-%     posicao_ajuste = pos_des_inicio;
-%     posicao_ajuste(3) = posicao_ajuste(3) + 0.1;
-%     simulaRobo(ksim, posicao_ajuste, oriz_des, false, false);
+    % Parametrização semicircunferências
+    ratio_circ_maior = 0.55;
+    ratio_circ_menor = 1 - ratio_circ_maior;
+    diam_circ_maior = ratio_circ_maior * altura_letra;
+    diam_circ_menor = ratio_circ_menor * altura_letra;
+    
+    % Semicircunferência menor de B
+    x_centro = posicaoInicial(1);
+    y_centro = y_des;
+    z_centro = posicaoInicial(3) + diam_circ_maior + (diam_circ_menor / 2);
+    centro = [x_centro y_centro z_centro];
+    ang_start = pi/2;
+    ang_end = -pi/2;
+    raio = diam_circ_menor / 2;
+    traj_circular = criaTrajCircular(ang_start, ang_end, ...
+                                    'h', raio, centro, N);
+    simulaRobo(N, traj_circular, oriz_des, NuvemContornoB, true, false);
+    
+    % Semicircunferência maior de B
+    x_centro = posicaoInicial(1);
+    y_centro = y_des;
+    z_centro = posicaoInicial(3) + (diam_circ_maior / 2);
+    centro = [x_centro y_centro z_centro];
+    ang_start = pi/2;
+    ang_end = -pi/2;
+    raio = diam_circ_maior / 2;
+    traj_circular = criaTrajCircular(ang_start, ang_end, ...
+                                    'h', raio, centro, N);
+    simulaRobo(N, traj_circular, oriz_des, NuvemContornoB, true, false);
     
     disp("Letra B desenhada");
 end
 
-function escreveLetraC(ksim, posicaoInicial, oriz_des)
+function escreveLetraC(N, posicaoInicial, oriz_des)
     global altura_letra largura_letra CenarioEscrita
-    t = sym('t');
 
     NuvemC = NuvemPontos([],[],[],[0 0 1],'-');
     CenarioEscrita.adicionaobjetos(NuvemC);
     
     % Valor sempre constante
     y_des = posicaoInicial(2);
+    
     % Posiciona efetuador na posição inicial de escrita da letra C
-    pos_des_x = posicaoInicial(1) + largura_letra;
-    pos_des_z = posicaoInicial(3) + altura_letra;
-    pos_des_inicial = [pos_des_x y_des pos_des_z];
-    simulaRobo(ksim + 10, pos_des_inicial, oriz_des, NuvemC, false)
+    % Posição inicial: Centrado no centro geométrica da letra com base
+    % na largura e na altura, raio r referente a metade da largura no
+    % ângulo de 45º (pi/4)
+    raio = largura_letra / 2;
+    ang_start = pi/4;
+    ang_end = 7*pi/4;
     
-    % Linha horizontal superior de C
-    pos_des_z = posicaoInicial(3) + altura_letra;
-    pos_horizontal_sup = [-t y_des pos_des_z];
-    simulaRobo(30, pos_horizontal_sup, oriz_des, NuvemC, true);
+    pos_des_x = posicaoInicial(1) + largura_letra/2 + raio*cos(ang_start);
+    pos_des_z = posicaoInicial(3) + altura_letra/2 + raio*sin(ang_start);
+    pos_des = [pos_des_x y_des pos_des_z];
+    
+    % Posiciona efetuador na posição inicial de escrita da letra B
+    simulaRobo(500, pos_des, oriz_des, false, false, true);
+    
+    % Curva C feita no sentido anti-horário
+    x_centro = posicaoInicial(1) + largura_letra/2;
+    y_centro = y_des;
+    z_centro = posicaoInicial(3) + altura_letra/2;
+    centro = [x_centro y_centro z_centro];
 
-    % Perna vertical de C (descendo) --> |
-    pos_des_x = posicaoInicial(1);
-    pos_horizontal_inf = [pos_des_x y_des -t];
-    simulaRobo(20, pos_horizontal_inf, oriz_des, NuvemC, true);
-    
-    % Linha horizontal inferior de C
-    pos_des_z = posicaoInicial(3);
-    pos_horizontal_sup = [t y_des pos_des_z];
-    simulaRobo(20, pos_horizontal_sup, oriz_des, NuvemC, true);
+    traj_circular = criaTrajCircular(ang_start, ang_end, ...
+                                    'ah', raio, centro, N);
+    simulaRobo(N, traj_circular, oriz_des, NuvemC, true, false);
 
     disp("Letra C desenhada.");
 end
@@ -262,7 +282,7 @@ function escreveLetraD(ksim, posicaoInicial, oriz_des)
     
     % Segmento de reta direito do D
     raio = altura_letra/2;
-    pos_des_x = posicaoInicial(1) + raio*cos(-t + pi/2);
+     pos_des_x = posicaoInicial(1) + raio*cos(-t + pi/2);
     pos_des_z =  (posicaoInicial(3) + raio) + raio*sin(-t + pi/2);
     pos_horizontal_sup = [pos_des_x y_des pos_des_z];
     [r_hist, u_hist] = simulaRobo(320, pos_horizontal_sup, oriz_des, NuvemD, true);
@@ -553,6 +573,29 @@ function symbolic_func = criaTrajReta(pstart, pend, T)
     % T instantes de simulação entre 0 e T-1
     symbolic_func = pstart + (pend - pstart)*(sym('t')/(T-1));
 end
+
+function symbolic_func = criaTrajCircular(ang_start, ang_end, ...
+                                          sentido_rot, raio, centro, T)
+    % Variável simbólica temporal                     
+    t = sym('t');
+    % Sentido de rotação (sentido_rot)
+    % h --> horario | ah --> anti-horario
+    if strcmp(sentido_rot, 'h')
+        sign = -1;
+    elseif strcmp(sentido_rot, 'ah')
+        sign = 1;
+    else
+        fprintf('Parametro sentido_rot não reconhecido: %s', sentido_rot);
+        return;
+    end
+    % Passo angular de cada instante de tempo
+    deltaAng = abs(ang_start - ang_end) / T;
+    % Ângulo total (angulo instantaneo + fase)
+    angulo = sign*(t*deltaAng) + ang_start;
+    px = centro(1) + raio*cos(angulo);
+    pz = centro(3) + raio*sin(angulo);
+    symbolic_func = [px centro(2) pz];
+end 
 
 function startPos = get_Xstart_letras(num_letras, largura_letra, x_centro_quadro)
     % 1 letra    
