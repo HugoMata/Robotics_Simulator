@@ -83,7 +83,7 @@ for i_L=1:qtd_letras
     posicaoInicial = [x_start_letras(i_L), ...
                       coords_frame_quadro(2) - 0.01, ... 
                       z_start_letras];
-    
+    fprintf('\n\tEscrevendo a %dª letra: %s', i_L, letra);
     if letra == 'A'    
         escreveLetraA(N, posicaoInicial, [0; 1; 0]);
     elseif letra == 'B'
@@ -104,6 +104,14 @@ for i_L=1:qtd_letras
         disp('A palavra não pode conter letras diferentes de A, B, C, D, E, F, G ou H.')
         return;
     end
+    
+    % Descobre a pose atual para afastar o efetuador
+    pose_atual = RoboEscritor.cinematicadir(RoboEscritor.q, 'efetuador');
+    posicao_atual = pose_atual(1:3, 4);
+    
+    % Retira o pincel do quadro após escrever cada letra
+    retiraPincelQuadro(posicao_atual, 0.05);
+    
 end
 
 % Volta para a posição inicial após escrever
@@ -177,7 +185,10 @@ function escreveLetraA(N, posicaoInicial, oriz_des)
 end
 
 function escreveLetraB(N, posicaoInicial, oriz_des)
-    global altura_letra CenarioEscrita
+    global altura_letra largura_letra CenarioEscrita
+    
+    % Centraliza a letra B
+    posicaoInicial(1) = posicaoInicial(1) + 0.5*largura_letra;
     
     NuvemContornoB = NuvemPontos([],[],[],[0 0 1],'-');
     CenarioEscrita.adicionaobjetos(NuvemContornoB);
